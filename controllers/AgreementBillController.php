@@ -494,8 +494,8 @@ class AgreementBillController extends Controller
                             }
                             $billTaxes = Model::createMultiple(BillTax::classname());
                             Model::loadMultiple($billTaxes, $postBillTax);
-                            $valid = Model::validateMultiple($billTaxes);
-                            if($valid){
+                            $flag = Model::validateMultiple($billTaxes);
+                            if($flag){
                                 if ($flag = $model->save(false)) {
                                     foreach ($billTaxes as $billTax) {
                                         if (! ($flag = $billTax->save(false))) {
@@ -505,6 +505,9 @@ class AgreementBillController extends Controller
                                         }
                                     }
                                 }
+                            }else{
+                                \Yii::$app->session->setFlash('error', json_encode($billTaxes[0]->errors));
+                                $transaction->rollBack();
                             }
                         }
                         if ($flag) {
