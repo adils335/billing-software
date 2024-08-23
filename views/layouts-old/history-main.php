@@ -1,0 +1,2 @@
+<?= $content ?>
+<?= $this->render('history');?>

@@ -1,0 +1,554 @@
+<?php
+
+namespace app\models\Search;
+use yii;
+use yii\base\Model;
+use yii\data\ActiveDataProvider;
+use app\models\Ledger as LedgerModel;
+
+/**
+ * Ledger represents the model behind the search form of `app\models\Ledger`.
+ */
+class Ledger extends LedgerModel
+{
+	public $fromDate;
+	public $toDate;
+	public $account_type;
+	public $vendor;
+	public $ledger;
+
+    /**
+     * {@inheritdoc}
+     */
+    public function rules()
+    {
+        return [
+            [['id', 'account', 'transaction_id', 'inout', 'type', 'company_id', 'status', 'created_at', 'created_by', 'updated_at', 'updated_by','account_type','ledger'], 'integer'],
+            [['particular', 'session','fromDate','toDate','vendor'], 'safe'],
+            [['credit', 'debit'], 'number'],
+        ];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function scenarios()
+    {
+        // bypass scenarios() implementation in the parent class
+        return Model::scenarios();
+    }
+
+    /**
+     * Creates data provider instance with search query applied
+     *
+     * @param array $params
+     *
+     * @return ActiveDataProvider
+     */
+    public function search($params)
+    { 
+        $formatter = \Yii::$app->formatter;
+        $query = LedgerModel::find();
+        $query->andWhere(['!=','status',LedgerModel::STATUS_DELETE]);
+        //$query->andWhere(['OR',['!=','credit',0],['!=','debit',0]]);
+        $particular = ['Personal Opening Balance','Expense Opening Balance','Opening Balance'];
+        $employeeParticular = ['Personal Opening Balance','Personal Payment by Account','Personal Payment by Employee','Salary','Extra Salary'];
+        // add conditions that should always apply here
+        
+        $dataProvider = new ActiveDataProvider([
+            'query' => $query,
+        ]);
+
+        $this->load($params);
+        $fromDate = '';$toDate = "";
+		if(!empty($this->fromDate)){
+		    $fromDate = $formatter->asDate($this->fromDate,'php:Y-m-d');
+		}
+		
+		if(!empty($this->toDate)){
+		    $toDate = $formatter->asDate($this->toDate,'php:Y-m-d');
+		}
+
+        if( $this->session != 'all' && !empty( $this->session ) && empty( $this->fromDate ) && empty( $this->toDate ) ){
+            $dates = Yii::$app->helper->getDateBySession( $this->session );
+            $fromDate = $dates['from_date'];
+            $toDate = $dates['to_date'];
+            $this->session = empty( $this->session )?\app\models\Session::getCurrentSession():$this->session;
+        }
+		if( empty( $this->session ) && empty( $this->fromDate ) && empty( $this->toDate ) ){
+			$this->fromDate = date("01-m-Y");
+			$this->toDate = date("t-m-Y");
+			$fromDate = $formatter->asDate($this->fromDate,'php:Y-m-d');
+			$toDate = $formatter->asDate($this->toDate,'php:Y-m-d');
+		}
+
+        $query->andFilterWhere(['>=','date',$fromDate]);
+		$query->andFilterWhere(['<=','date',$toDate]);
+
+        
+        if (!$this->validate() || empty($params)) {
+            // uncomment the following line if you do not want to return any records when validation fails
+             $query->where('0=1');
+            return $dataProvider;
+        }
+
+        // grid filtering conditions
+        $query->andFilterWhere([
+            'id' => $this->id,
+            'account' => $this->account,
+            'transaction_id' => $this->transaction_id,
+            'credit' => $this->credit,
+            'debit' => $this->debit,
+            'inout' => $this->inout,
+            'type' => $this->type,
+            //'company_id' => $this->company_id,
+            'status' => $this->status,
+            'created_at' => $this->created_at,
+            'created_by' => $this->created_by,
+            'updated_at' => $this->updated_at,
+            'updated_by' => $this->updated_by,
+        ]);
+        
+        $query->andFilterWhere(['like', 'particular', $this->particular]);
+            //->andFilterWhere(['like', 'session', $this->session]);
+
+        $query->andFilterWhere(['like', 'particular', $this->particular]);
+		
+		if($this->account_type == Ledger::ACCOUNT_PERSONAL){
+		  $query->andWhere(['IN','particular',$employeeParticular]);
+		}else if($this->account_type == Ledger::ACCOUNT_EXPENSE){
+          $query->andWhere(['NOT IN','particular',$employeeParticular]);
+		}
+       
+        $query->andWhere(['NOT IN','particular',$particular]);
+		
+		$query->orderBy(['date'=>SORT_ASC,'id'=>SORT_ASC]);
+
+		//echo $query->createCommand()->getRawSql();die();
+        return $dataProvider;
+    }
+    
+    public function unverifyList($params)
+    { 
+        $formatter = \Yii::$app->formatter;
+        $query = LedgerModel::find();
+        $query->andWhere(['status'=>LedgerModel::STATUS_UNVERIFIED]);
+		//$query->andWhere(['OR',['!=','credit',0],['!=','debit',0]]);
+        $query->andWhere(['NOT IN','particular',['Personal Opening Balance','Expense Opening Balance','Opening Balance']]);
+        
+        // add conditions that should always apply here
+        
+        $dataProvider = new ActiveDataProvider([
+            'query' => $query,
+        ]);
+
+        $this->load($params);
+       // echo "<pre>";print_r($this);die();
+  /*   
+        if (!$this->validate() || empty($params)) {
+            // uncomment the following line if you do not want to return any records when validation fails
+             $query->where('0=1');
+            return $dataProvider;
+        }
+*/
+        if( empty($this->account) ){
+            $model = new LedgerModel;
+            $account = $model->getAccounts($this->type,$this->company_id);
+        }else{
+            $account = $this->account;
+        }
+        // grid filtering conditions
+        $query->andFilterWhere([
+            'id' => $this->id,
+            'account' => $account,
+            'transaction_id' => $this->transaction_id,
+            'credit' => $this->credit,
+            'debit' => $this->debit,
+            'inout' => $this->inout,
+            'type' => $this->type,
+            'company_id' => $this->company_id,
+            'status' => $this->status,
+            'created_at' => $this->created_at,
+            'created_by' => $this->created_by,
+            'updated_at' => $this->updated_at,
+            'updated_by' => $this->updated_by,
+        ]);
+        
+        $query
+            //->andFilterWhere(['like', 'particular', $this->particular])
+            ->andFilterWhere(['like', 'session', $this->session]);
+
+        //$query->andFilterWhere(['like', 'particular', $this->particular]);
+		
+		$query->orderBy(['date'=>SORT_ASC,'id'=>SORT_ASC]);
+        
+        $query->groupBy(['account','type']);
+		//echo $query->createCommand()->getRawSql();die();
+        return $dataProvider;
+    }
+	
+    public function dataSearch($params)
+    {   
+	
+		$mainModel = new \app\models\Ledger;
+		$particular = ['Personal Opening Balance','Expense Opening Balance','Opening Balance'];
+        $employeeParticular = ['Personal Opening Balance','Personal Payment by Account','Personal Payment by Employee','Salary','Extra Salary'];
+        $personalParticular = ['Personal Payment by Account','Personal Payment by Employee','Salary','Extra Salary'];
+        $expenseParticular = ['Personal Opening Balance','Expense Opening Balance','Personal Payment by Account','Personal Payment by Employee','Salary'];
+
+		$data = [
+		          "name"=>"",
+		          "initial_balance"=>0,
+		          "fromDate"=>"",
+		          "toDate"=>"",
+		          "credit"=>0,
+		          "debit"=>0,
+		          "bal"=>0,
+		          "balance"=>0,
+		          "opening_bal"=>0,
+		          "opening_balance"=>0,
+		          "last_balance"=>0,
+				];
+		if( empty( $params ) ){
+		    return $data;
+		}
+        $this->load($params);
+        
+        $formatter = \Yii::$app->formatter;
+
+        $fromDate = '';$toDate = "";
+		if(!empty($this->fromDate)){
+		    $fromDate = $formatter->asDate($this->fromDate,'php:Y-m-d');
+		}
+		
+		if(!empty($this->toDate)){
+		    $toDate = $formatter->asDate($this->toDate,'php:Y-m-d');
+		}
+
+        if( $this->session != 'all' && empty( $this->fromDate ) && empty( $this->toDate ) ){
+            $dates = Yii::$app->helper->getDateBySession( $this->session );
+            $fromDate = $dates['from_date'];
+            $toDate = $dates['to_date'];
+        }
+		
+        $data['name'] = $this->accountName;		
+        //echo "<pre>";print_r($this);die();
+		$where = [];
+		$whereIn = [];
+		$initialBalance = LedgerModel::find()->select(['credit','debit'])
+		              ->where(['account'=>$this->account,'type'=>$this->type,'particular'=>'Opening Balance'])->one();
+		//echo $initialBalance->createCommand()->getRawSql();die();
+		if($this->type == LedgerModel::TYPE_ACCOUNT){
+		    $sum = "SUM(credit-debit) as credit";
+		}else{
+		    $sum = "SUM(debit-credit) as credit";
+		}
+		
+		if($this->type == LedgerModel::TYPE_EMPLOYEE){
+		    if($this->account_type == LedgerModel::ACCOUNT_PERSONAL){
+		      $initialBalance = LedgerModel::find()->select(['credit','debit'])
+		            ->where(['account'=>$this->account,'type'=>$this->type,'particular'=>'Personal Opening Balance'])->one();  
+		      $where = ['IN','particular',$employeeParticular];
+		    }else if($this->account_type == LedgerModel::ACCOUNT_EXPENSE){
+		      $initialBalance = LedgerModel::find()->select(['credit','debit'])
+		            ->where(['account'=>$this->account,'type'=>$this->type,'particular'=>'Expense Opening Balance'])->one();  
+              $where = ['NOT IN','particular',$employeeParticular];
+              $sum = "SUM(credit-debit) as credit";
+		    }
+		}else{
+		    $where = [];
+		}
+		$data['initial_balance'] =  $initialBalance->credit>0?$initialBalance->credit:-$initialBalance->debit;
+		//echo "<pre>";print_r($data);die();
+		$whereIn = ['particular'=>$particular];
+		$whereNot = ['NOT IN','particular',['Personal Opening Balance','Expense Opening Balance','Opening Balance']];
+		
+        //if($this->fromDate && $this->toDate){
+        if($fromDate && $toDate){
+			
+			//$data['fromDate'] = $this->fromDate;
+			//$data['toDate'] = $this->toDate;
+			$data['fromDate'] = $fromDate;
+			$data['toDate'] = $toDate;
+			
+			$openingBalance = LedgerModel::find()->select([$sum])
+			                                     ->where(['account'=>$this->account,'type'=>$this->type])
+			                                     ->andWhere(['<','date',$data['fromDate']])
+			                                     ->andWhere(['!=','status',LedgerModel::STATUS_DELETE])
+			                                     ->andWhere($where)
+			                                     ->andWhere($whereNot)
+			                                     ->one();
+			//echo $openingBalance->createCommand()->getRawSql();die();
+		//}elseif(!$this->fromDate && $this->toDate){
+		}elseif(!$fromDate && $toDate){
+			
+			$minDate = LedgerModel::find()->select(['MIN(date) as date'])
+			                              ->where(['account'=>$this->account,'type'=>$this->type])
+			                              ->andWhere(['!=','status',LedgerModel::STATUS_DELETE])
+			                              ->andWhere($where)
+			                              ->one();
+
+			$data['fromDate'] = $minDate->date;
+			//$data['toDate'] = $this->toDate;
+			$data['toDate'] = $toDate;
+			
+			$openingBalance = LedgerModel::find()->select([$sum])
+			                                     ->where(['account'=>$this->account,'type'=>$this->type])
+			                                     ->andWhere(['!=','status',LedgerModel::STATUS_DELETE])
+			                                     ->andWhere($whereIn)
+			                                     ->andWhere($whereNot)
+			                                     ->one();
+			//echo $openingBalance->createCommand()->getRawSql();die();
+		//}elseif($this->fromDate && !$this->toDate){
+		}elseif($fromDate && !$toDate){
+			
+			$maxDate = LedgerModel::find()->select(['MAX(date) as date'])
+			                              ->where(['account'=>$this->account,'type'=>$this->type])
+			                              ->andWhere(['!=','status',LedgerModel::STATUS_DELETE])
+			                              ->andWhere($where)
+			                              ->one();
+			$data['fromDate'] = $fromDate;
+			//$data['fromDate'] = $this->fromDate;
+			$data['toDate'] = $maxDate->date;
+			
+			$openingBalance = LedgerModel::find()->select([$sum])
+			                                     ->where(['account'=>$this->account,'type'=>$this->type])
+			                                     ->andWhere(['<','date',$data['fromDate']])
+			                                     ->andWhere(['!=','status',LedgerModel::STATUS_DELETE])
+			                                     ->andWhere($where)
+			                                     ->andWhere($whereNot)
+			                                     ->one();
+			//echo $openingBalance->createCommand()->getRawSql();die();
+		}else{
+			
+			$minDate = LedgerModel::find()->select(['MIN(date) as date'])
+			                              ->where(['account'=>$this->account,'type'=>$this->type])
+			                              ->andWhere(['!=','status',LedgerModel::STATUS_DELETE])
+			                              ->andWhere($where)
+			                              ->one();
+			$maxDate = LedgerModel::find()->select(['MAX(date) as date'])
+			                              ->where(['account'=>$this->account,'type'=>$this->type])
+			                              ->andWhere(['!=','status',LedgerModel::STATUS_DELETE])
+			                              ->andWhere($where)
+			                              ->one();
+			$data['fromDate'] = $minDate->date;
+			$data['toDate'] = $maxDate->date;
+			
+			$openingBalance = LedgerModel::find()->select([$sum])
+			                                     ->where(['account'=>$this->account,'type'=>$this->type])
+			                                     ->andWhere(['!=','status',LedgerModel::STATUS_DELETE])
+			                                     ->andWhere($where)
+			                                     ->andWhere($whereIn)
+		   	                                     ->one();
+		   	 $openingBalance->credit = 0;                                    
+		}
+		
+		$data['opening_balance'] = $data['initial_balance'] + $openingBalance->credit;
+			//echo "<pre>";print_r($data);die();
+        /*if(!empty($params['page'])){
+
+        	if(LedgerModel::TYPE_EMPLOYEE == $this->type){
+                  
+               if($this->account_type == Ledger::ACCOUNT_PERSONAL){
+
+		             $lastAmount = LedgerModel::find()->select(['credit','debit'])
+		             ->where(['type'=>$this->type,'account'=>$this->account])
+		             ->andWhere(['!=','status',LedgerModel::STATUS_DELETE])
+		             ->andWhere(['IN','particular',$personalParticular])
+		             ->orderBy(['date'=>SORT_ASC,'id'=>SORT_ASC])->limit(20*($params['page']-1));
+
+		       }else if($this->account_type == Ledger::ACCOUNT_EXPENSE){
+
+                     $lastAmount = LedgerModel::find()->select(['credit','debit'])
+                     ->where(['type'=>$this->type,'account'=>$this->account])
+                     ->andWhere(['!=','status',LedgerModel::STATUS_DELETE])
+                     ->andWhere(['NOT IN','particular',$expenseParticular])
+                     ->orderBy(['date'=>SORT_ASC,'id'=>SORT_ASC])->limit(20*($params['page']-1));
+
+		       }
+
+        	}else{
+
+               $lastAmount = LedgerModel::find()->select(['credit','debit'])
+               ->where(['type'=>$this->type,'account'=>$this->account])
+               ->andWhere(['!=','status',LedgerModel::STATUS_DELETE])
+               ->andWhere(['NOT IN','particular',$particular])
+               ->orderBy(['date'=>SORT_ASC,'id'=>SORT_ASC])->limit(20*($params['page']-1));
+
+        	}
+            
+              //$lastAmount = $lastAmount->andFilterWhere(['>=','date',$this->fromDate]);
+              //$lastAmount = $lastAmount->andFilterWhere(['<=','date',$this->toDate]);
+              $lastAmount = $lastAmount->andFilterWhere(['>=','date',$fromDate]);
+              $lastAmount = $lastAmount->andFilterWhere(['<=','date',$toDate]);
+              //echo $lastAmount->createCommand()->getRawSql();die();
+              $lastAmount = $lastAmount->asArray()->all();
+
+            $data['last_balance'] = array_sum(array_column($lastAmount,'credit'))-array_sum(array_column($lastAmount,'debit'));
+           //echo $data['last_balance'];die();
+        }*/
+
+		$data['opening_bal'] = $data['opening_balance'] < 0?abs($data['opening_balance'])." Dr.":$data['opening_balance']." Cr.";
+		
+		//print_r($data);die();
+		$totalCredit = LedgerModel::find()->select(['SUM(credit) as credit'])
+		                                  ->where(['account'=>$this->account,'type'=>$this->type])
+		                                  ->andFilterWhere(['BETWEEN','date',$data['fromDate'],$data['toDate']])
+		                                  ->andWhere(['!=','status',LedgerModel::STATUS_DELETE])
+		                                  ->groupBy(['account','type'])
+			                              ->andWhere($where)
+			                              ->andWhere($whereNot)
+		                                  ->one();
+		//echo $totalCredit->createCommand()->getRawSql();die();
+		$totalDebit = LedgerModel::find()->select(['SUM(debit) as debit'])
+		                                 ->where(['account'=>$this->account,'type'=>$this->type])
+		                                 ->andFilterWhere(['BETWEEN','date',$data['fromDate'],$data['toDate']])
+		                                 ->andWhere(['!=','status',LedgerModel::STATUS_DELETE])
+			                             ->andWhere($where)
+			                             ->andWhere($whereNot)
+		                                 ->one();
+					  
+		//echo $totalDebit->createCommand()->getRawSql();die();
+		if((LedgerModel::TYPE_ACCOUNT == $this->type || LedgerModel::ACCOUNT_EXPENSE == $this->account_type) && !empty($totalCredit->credit))
+		     $data['credit'] = $totalCredit->credit;
+		elseif(!empty($totalDebit->debit)) 
+		     $data['credit'] = $totalDebit->debit;
+        
+        if((LedgerModel::TYPE_ACCOUNT == $this->type || LedgerModel::ACCOUNT_EXPENSE == $this->account_type) && !empty($totalDebit->debit))		
+		    $data['debit'] = $totalDebit->debit;
+		elseif(!empty($totalCredit->credit)) 
+		    $data['debit'] = $totalCredit->credit;
+		
+		$balance = $data['opening_balance'] + $data['credit'] - $data['debit'];
+		$balance = round($balance,2);
+		$data['balance']  = $balance;
+		if($balance < 0)
+		    $data['bal'] = abs($balance)." Dr.";
+		else
+		    $data['bal'] = abs($balance)." Cr.";
+		
+        return $data;
+    }
+
+    public function unverifyData($params)
+    {   
+	
+		$mainModel = new \app\models\Ledger;
+		$particular = ['Personal Opening Balance','Expense Opening Balance','Opening Balance'];
+        $employeeParticular = ['Personal Opening Balance','Personal Payment by Account','Personal Payment by Employee','Salary','Extra Salary'];
+        $personalParticular = ['Personal Payment by Account','Personal Payment by Employee','Salary','Extra Salary'];
+        $expenseParticular = ['Personal Opening Balance','Expense Opening Balance','Personal Payment by Account','Personal Payment by Employee','Salary'];
+
+		$data = [
+		          "name"=>"",
+		          "fromDate"=>"",
+		          "toDate"=>"",
+		          "credit"=>0,
+		          "debit"=>0,
+		          "bal"=>0,
+		          "balance"=>0,
+		          "opening_bal"=>0,
+		          "opening_balance"=>0,
+		          "last_balance"=>0,
+				];
+		
+        $this->load($params);
+        
+        $data['name'] = $this->accountName;		
+        
+		$where = [];
+		$whereIn = [];
+		
+		
+		$initialBalance = LedgerModel::find()->select(['credit','debit'])->where(['account'=>$this->account,'type'=>$this->type,'particular'=>'Opening Balance'])->one();
+		//echo $initialBalance->createCommand()->getRawSql();die();
+		if($this->type == LedgerModel::TYPE_ACCOUNT){
+		    $sum = "SUM(credit-debit) as credit";
+		}else{
+		    $sum = "SUM(debit-credit) as credit";
+		}
+		
+		if($this->type == LedgerModel::TYPE_EMPLOYEE){
+		    if($this->account_type == LedgerModel::ACCOUNT_PERSONAL){
+		      $initialBalance = LedgerModel::find()->select(['credit','debit'])->where(['account'=>$this->account,'type'=>$this->type,'particular'=>'Personal Opening Balance'])->one();  
+		      $where = ['IN','particular',$employeeParticular];
+		    }else if($this->account_type == LedgerModel::ACCOUNT_EXPENSE){
+		      $initialBalance = LedgerModel::find()->select(['credit','debit'])->where(['account'=>$this->account,'type'=>$this->type,'particular'=>'Expense Opening Balance'])->one();  
+              $where = ['NOT IN','particular',$employeeParticular];
+              $sum = "SUM(credit-debit) as credit";
+		    }
+		}else{
+		    $where = [];
+		}
+		$data['initial_balance'] =  $initialBalance->credit>0?$initialBalance->credit:-$initialBalance->debit;
+		
+		$whereIn = ['particular'=>$particular];
+		$whereNot = ['NOT IN','particular',$particular];
+		
+		$minDate = LedgerModel::find()->select(['MAX(date) as date'])
+		                              ->where(['account'=>$this->account,'type'=>$this->type])
+		                              ->andWhere(['status'=>LedgerModel::STATUS_VERIFIED])
+		                              ->andWhere($where)
+		                              ->one();
+        //echo $minDate->createCommand()->getRawSql();die();
+		$maxDate = LedgerModel::find()->select(['MAX(date) as date'])
+		                              ->where(['account'=>$this->account,'type'=>$this->type])
+		                              ->andWhere(['status'=>LedgerModel::STATUS_UNVERIFIED])
+		                              ->andWhere($where)
+		                              ->one();
+		$data['fromDate'] = $minDate->date;
+		$data['toDate'] = $maxDate->date;
+	    		
+		$openingBalance = LedgerModel::find()->select([$sum])
+		                                     ->where(['account'=>$this->account,'type'=>$this->type])
+		                                     ->andWhere(['status'=>LedgerModel::STATUS_VERIFIED])
+		                                     ->andWhere($whereNot)
+		                                     ->andWhere($where)
+		                                     ->one();
+	    //echo $openingBalance->createCommand()->getRawSql();die();	
+	    
+		$data['opening_balance'] = $data['initial_balance'] + $openingBalance->credit;
+		//$data['opening_balance'] = $openingBalance->credit == null?0:$openingBalance->credit;
+        //echo "<pre>";print_r($data);die();
+		$data['opening_bal'] = $data['opening_balance'] < 0?abs($data['opening_balance'])." Dr.":$data['opening_balance']." Cr.";
+		
+		$totalCredit = LedgerModel::find()->select(['SUM(credit) as credit'])
+		                                  ->where(['account'=>$this->account,'type'=>$this->type])
+		                                  //->andFilterWhere(['BETWEEN','date',$data['fromDate'],$data['toDate']])
+		                                  ->andWhere(['status'=>LedgerModel::STATUS_UNVERIFIED])
+		                                  ->groupBy(['account','type'])
+			                              ->andWhere($where)
+			                              //->andWhere($whereNot)
+		                                  ->one();
+	    //echo $totalCredit->createCommand()->getRawSql();die();
+		
+		$totalDebit = LedgerModel::find()->select(['SUM(debit) as debit'])
+		                                 ->where(['account'=>$this->account,'type'=>$this->type])
+		                                 //->andFilterWhere(['BETWEEN','date',$data['fromDate'],$data['toDate']])
+		                                 ->andWhere(['status'=>LedgerModel::STATUS_UNVERIFIED])
+			                             ->andWhere($where)
+			                             //->andWhere($whereNot)
+			                             ->groupBy(['account','type'])
+		                                 ->one();
+					  
+		if((LedgerModel::TYPE_ACCOUNT == $this->type || LedgerModel::ACCOUNT_EXPENSE == $this->account_type) && !empty($totalCredit->credit))
+		     $data['credit'] = $totalCredit->credit;
+		elseif(!empty($totalDebit->debit)) 
+		     $data['credit'] = $totalDebit->debit;
+        
+        if((LedgerModel::TYPE_ACCOUNT == $this->type || LedgerModel::ACCOUNT_EXPENSE == $this->account_type) && !empty($totalDebit->debit))		
+		    $data['debit'] = $totalDebit->debit;
+		elseif(!empty($totalCredit->credit)) 
+		    $data['debit'] = $totalCredit->credit;
+		
+		$balance = $data['opening_balance'] + $data['credit'] - $data['debit'];
+		$balance = round($balance,2);//die($balance);
+		if($balance < 0)
+		    $data['bal'] = abs($balance)." Dr.";
+		else
+		    $data['bal'] = abs($balance)." Cr.";
+		
+        return $data;
+    }
+	
+}
