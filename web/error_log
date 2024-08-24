@@ -28762,3 +28762,101 @@ $_SERVER = [
     ],
     'argc' => 1,
 ]
+[23-Aug-2024 19:27:30 Asia/Kolkata] An Error occurred while handling another error:
+yii\web\HeadersAlreadySentException: Headers already sent in /home1/dkapw83x/public_html/billing_software/controllers/AgreementBillController.php on line 498. in /home1/dkapw83x/public_html/billing_software/vendor/yiisoft/yii2/web/Response.php:369
+Stack trace:
+#0 /home1/dkapw83x/public_html/billing_software/vendor/yiisoft/yii2/web/Response.php(342): yii\web\Response->sendHeaders()
+#1 /home1/dkapw83x/public_html/billing_software/vendor/yiisoft/yii2/web/ErrorHandler.php(136): yii\web\Response->send()
+#2 /home1/dkapw83x/public_html/billing_software/vendor/yiisoft/yii2/base/ErrorHandler.php(152): yii\web\ErrorHandler->renderException(Object(yii\base\ErrorException))
+#3 [internal function]: yii\base\ErrorHandler->handleException(Object(yii\base\ErrorException))
+#4 {main}
+Previous exception:
+yii\base\ErrorException: Undefined array key 0 in /home1/dkapw83x/public_html/billing_software/controllers/AgreementBillController.php:498
+Stack trace:
+#0 /home1/dkapw83x/public_html/billing_software/controllers/AgreementBillController.php(498): yii\base\ErrorHandler->handleError(2, 'Undefined array...', '/home1/dkapw83x...', 498)
+#1 [internal function]: app\controllers\AgreementBillController->actionCreate('1')
+#2 /home1/dkapw83x/public_html/billing_software/vendor/yiisoft/yii2/base/InlineAction.php(57): call_user_func_array(Array, Array)
+#3 /home1/dkapw83x/public_html/billing_software/vendor/yiisoft/yii2/base/Controller.php(178): yii\base\InlineAction->runWithParams(Array)
+#4 /home1/dkapw83x/public_html/billing_software/vendor/yiisoft/yii2/base/Module.php(552): yii\base\Controller->runAction('create', Array)
+#5 /home1/dkapw83x/public_html/billing_software/vendor/yiisoft/yii2/web/Application.php(103): yii\base\Module->runAction('agreement-bill/...', Array)
+#6 /home1/dkapw83x/public_html/billing_software/vendor/yiisoft/yii2/base/Application.php(384): yii\web\Application->handleRequest(Object(yii\web\Request))
+#7 /home1/dkapw83x/public_html/billing_software/web/index.php(12): yii\base\Application->run()
+#8 {main}
+$_SERVER = [
+    'LSPHP_ENABLE_USER_INI' => 'on',
+    'PATH' => '/usr/local/bin:/usr/bin:/bin',
+    'TEMP' => '/tmp',
+    'TMP' => '/tmp',
+    'TMPDIR' => '/tmp',
+    'PWD' => '/',
+    'HTTP_ACCEPT' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'HTTP_ACCEPT_ENCODING' => 'gzip, deflate, br, zstd',
+    'HTTP_ACCEPT_LANGUAGE' => 'en-US,en;q=0.9',
+    'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
+    'CONTENT_LENGTH' => '2238',
+    'HTTP_COOKIE' => 'PHPSESSID=1f1578a6cc9e72ad6bddffa8a4927160; _csrf=350e9c0e860e01ae3f6b4a628bbcb4bf0c61176303a8299bdb9d0ce49d2769dba%3A2%3A%7Bi%3A0%3Bs%3A5%3A%22_csrf%22%3Bi%3A1%3Bs%3A32%3A%22aZWA1G-hWPIFeA_65-ytKsLx5cgF7XTz%22%3B%7D',
+    'HTTP_HOST' => 'bill.dka.pw',
+    'HTTP_REFERER' => 'https://bill.dka.pw/agreement-bill/create?agreement_id=1',
+    'HTTP_USER_AGENT' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36',
+    'HTTP_CACHE_CONTROL' => 'max-age=0',
+    'HTTP_SEC_CH_UA' => '"Not)A;Brand";v="99", "Google Chrome";v="127", "Chromium";v="127"',
+    'HTTP_SEC_CH_UA_MOBILE' => '?0',
+    'HTTP_SEC_CH_UA_PLATFORM' => '"macOS"',
+    'HTTP_UPGRADE_INSECURE_REQUESTS' => '1',
+    'HTTP_ORIGIN' => 'https://bill.dka.pw',
+    'HTTP_SEC_FETCH_SITE' => 'same-origin',
+    'HTTP_SEC_FETCH_MODE' => 'navigate',
+    'HTTP_SEC_FETCH_USER' => '?1',
+    'HTTP_SEC_FETCH_DEST' => 'document',
+    'HTTP_PRIORITY' => 'u=0, i',
+    'REDIRECT_UNIQUE_ID' => 'ZsiVSpfnOnQEhPIxckvy2gABPXo',
+    'REDIRECT_QS_ConnectionId' => '172442145075082574470659',
+    'REDIRECT_HTTPS' => 'on',
+    'REDIRECT_SSL_TLS_SNI' => 'bill.dka.pw',
+    'REDIRECT_HTTP2' => 'on',
+    'REDIRECT_H2PUSH' => 'off',
+    'REDIRECT_H2_PUSH' => 'off',
+    'REDIRECT_H2_PUSHED' => '',
+    'REDIRECT_H2_PUSHED_ON' => '',
+    'REDIRECT_H2_STREAM_ID' => '1',
+    'REDIRECT_H2_STREAM_TAG' => '470659-915-1',
+    'REDIRECT_STATUS' => '200',
+    'UNIQUE_ID' => 'ZsiVSpfnOnQEhPIxckvy2gABPXo',
+    'QS_ConnectionId' => '172442145075082574470659',
+    'HTTPS' => 'on',
+    'SSL_TLS_SNI' => 'bill.dka.pw',
+    'HTTP2' => 'on',
+    'H2PUSH' => 'off',
+    'H2_PUSH' => 'off',
+    'H2_PUSHED' => '',
+    'H2_PUSHED_ON' => '',
+    'H2_STREAM_ID' => '1',
+    'H2_STREAM_TAG' => '470659-915-1',
+    'SERVER_SIGNATURE' => '',
+    'SERVER_SOFTWARE' => 'Apache',
+    'SERVER_NAME' => 'bill.dka.pw',
+    'SERVER_ADDR' => '119.18.54.170',
+    'SERVER_PORT' => '443',
+    'REMOTE_ADDR' => '103.212.145.155',
+    'DOCUMENT_ROOT' => '/home1/dkapw83x/public_html/billing_software/web',
+    'REQUEST_SCHEME' => 'https',
+    'CONTEXT_PREFIX' => '',
+    'CONTEXT_DOCUMENT_ROOT' => '/home1/dkapw83x/public_html/billing_software/web',
+    'SERVER_ADMIN' => 'webmaster@bill.dka.pw',
+    'SCRIPT_FILENAME' => '/home1/dkapw83x/public_html/billing_software/web/index.php',
+    'REMOTE_PORT' => '55826',
+    'REDIRECT_URL' => '/agreement-bill/create',
+    'REDIRECT_QUERY_STRING' => 'agreement_id=1',
+    'SERVER_PROTOCOL' => 'HTTP/2.0',
+    'REQUEST_METHOD' => 'POST',
+    'QUERY_STRING' => 'agreement_id=1',
+    'REQUEST_URI' => '/agreement-bill/create?agreement_id=1',
+    'SCRIPT_NAME' => '/index.php',
+    'PHP_SELF' => '/index.php',
+    'REQUEST_TIME_FLOAT' => 1724421450.762505054473876953125,
+    'REQUEST_TIME' => 1724421450,
+    'argv' => [
+        'agreement_id=1',
+    ],
+    'argc' => 1,
+]

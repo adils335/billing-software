@@ -481,20 +481,24 @@ class AgreementBillController extends Controller
                             $postBillTax = Yii::$app->request->post()['BillTax']??[];
                             if( $model->tax_on_items ){
                                 foreach( $billItems as $billItem ){
-                                    $billTax['invoice_id'] = $billItem->invoice_id;
-                                    $billTax['agreement_id'] = $billItem->agreement_id;
-                                    $billTax['item_id'] = $billItem->id;
-                                    $billTax['tax_id'] = $billItem->tax_id;
-                                    $billTax['rate'] = $billItem->tax_rate;
-                                    $billTax['amount'] = $billItem->tax_amount;
-                                    $billTax['company_id'] = $billItem->company_id;
-                                    $billTax['session'] = $billItem->session;
-                                    $postBillTax[] = $billTax;
+                                    $billTax = [
+                                        'invoice_id' => $billItem->invoice_id,
+                                        'agreement_id' => $billItem->agreement_id,
+                                        'item_id' => $billItem->id,
+                                        'tax_id' => $billItem->tax_id,
+                                        'rate' => $billItem->tax_rate,
+                                        'amount' => $billItem->tax_amount,
+                                        'company_id' => $billItem->company_id,
+                                        'session' => $billItem->session,
+                                    ];
+                                    Yii::$app->request->post()['BillTax'][] = $billTax;
                                 }
                             }
-                            $billTaxes = Model::createMultiple(BillTax::classname());
-                            Model::loadMultiple($billTaxes, $postBillTax);
-                            $flag = Model::validateMultiple($billTaxes);
+                            if (!empty($postBillTax['BillTax'])) {
+                                $billTaxes = Model::createMultiple(BillTax::classname());
+                                Model::loadMultiple($billTaxes, Yii::$app->request->post());
+                                $flag = Model::validateMultiple($billTaxes);
+                            }
                             if($flag){
                                 if ($flag = $model->save(false)) {
                                     foreach ($billTaxes as $billTax) {
